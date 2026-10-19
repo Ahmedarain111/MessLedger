@@ -260,7 +260,7 @@ class _ManagerStudentsScreenState extends State<ManagerStudentsScreen> {
                                 ? authUser?.hostelId
                                 : hostels.first.id);
                             return DropdownButtonFormField<String>(
-                              value: selectedHostelId,
+                              initialValue: selectedHostelId,
                               isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Assigned Hostel',

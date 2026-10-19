@@ -163,10 +163,9 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
                       Wrap(spacing: 6, runSpacing: 6, children: [
                         if (entry.hostelName != null)
                           StatusChip(
-                            label: entry.hostelName!,
+                            label: '${entry.hostelName} Mess',
                             icon: Icons.apartment_rounded,
-                            background: scheme.surfaceContainerHighest,
-                            foreground: scheme.onSurfaceVariant,
+                            color: scheme.primary,
                           ),
                         StatusChip.style(entryStatusStyle(context, entry.entryStatus)),
                         if (approved) StatusChip.style(paymentStatusStyle(context, entry.paymentStatus)),

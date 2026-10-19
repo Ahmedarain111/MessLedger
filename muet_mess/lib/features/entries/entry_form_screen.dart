@@ -214,7 +214,7 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: DropdownButtonFormField<String>(
-                  value: _hostelId ?? defaultHostelId,
+                  initialValue: _hostelId ?? defaultHostelId,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Hostel Mess',
