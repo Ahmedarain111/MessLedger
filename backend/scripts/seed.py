@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.orm import Session
 from app.database import engine, Base, SessionLocal
-from app.models import User, Dish, UserRole, Shift
+from app.models import User, Dish, UserRole, Shift, Hostel
 from app.security import get_password_hash
 
 
@@ -26,17 +26,59 @@ def seed_db(reset: bool = False):
             print("Database already seeded. Use --reset to re-seed.")
             return
         
-        manager = User(
-            name="Mess Manager",
-            role=UserRole.manager,
-            username="manager",
-            password_hash=get_password_hash("manager123"),
-            roll_number=None,
-            room_number=None,
-            is_active=True
-        )
-        db.add(manager)
+        # 1. Seed Hostels
+        hostels_data = [
+            {"name": "Sheikh Sindhi", "code": "SS"},
+            {"name": "GM Syed", "code": "GMS"},
+            {"name": "Jatoi", "code": "JAT"},
+            {"name": "Rashidi", "code": "RASH"},
+        ]
+        hostels_map = {}
+        for h in hostels_data:
+            hostel = Hostel(name=h["name"], code=h["code"], is_active=True)
+            db.add(hostel)
+            hostels_map[h["name"]] = hostel
+        db.flush()
+
+        # 2. Seed Managers (Every hostel has one manager)
+        managers = [
+            User(
+                name="Manager (Sheikh Sindhi)",
+                role=UserRole.manager,
+                username="manager",
+                password_hash=get_password_hash("manager123"),
+                hostel_id=hostels_map["Sheikh Sindhi"].id,
+                is_active=True
+            ),
+            User(
+                name="Manager (GM Syed)",
+                role=UserRole.manager,
+                username="manager_gms",
+                password_hash=get_password_hash("manager123"),
+                hostel_id=hostels_map["GM Syed"].id,
+                is_active=True
+            ),
+            User(
+                name="Manager (Jatoi)",
+                role=UserRole.manager,
+                username="manager_jatoi",
+                password_hash=get_password_hash("manager123"),
+                hostel_id=hostels_map["Jatoi"].id,
+                is_active=True
+            ),
+            User(
+                name="Manager (Rashidi)",
+                role=UserRole.manager,
+                username="manager_rashidi",
+                password_hash=get_password_hash("manager123"),
+                hostel_id=hostels_map["Rashidi"].id,
+                is_active=True
+            ),
+        ]
+        for m in managers:
+            db.add(m)
         
+        # 3. Seed Students
         students = [
             User(
                 name="Ahmed Khan",
@@ -45,6 +87,7 @@ def seed_db(reset: bool = False):
                 password_hash=get_password_hash("student123"),
                 roll_number="CS2021001",
                 room_number="A-101",
+                hostel_id=hostels_map["Sheikh Sindhi"].id,
                 is_active=True
             ),
             User(
@@ -54,6 +97,7 @@ def seed_db(reset: bool = False):
                 password_hash=get_password_hash("student123"),
                 roll_number="CS2021002",
                 room_number="A-102",
+                hostel_id=hostels_map["GM Syed"].id,
                 is_active=True
             ),
             User(
@@ -63,6 +107,7 @@ def seed_db(reset: bool = False):
                 password_hash=get_password_hash("student123"),
                 roll_number="EE2021001",
                 room_number="B-201",
+                hostel_id=hostels_map["Jatoi"].id,
                 is_active=True
             ),
             User(
@@ -72,6 +117,7 @@ def seed_db(reset: bool = False):
                 password_hash=get_password_hash("student123"),
                 roll_number="ME2021001",
                 room_number="B-202",
+                hostel_id=hostels_map["Rashidi"].id,
                 is_active=True
             ),
         ]

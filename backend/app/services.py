@@ -319,6 +319,8 @@ def get_entry_response(entry: Entry, db: Session) -> dict:
         "student_id": entry.student_id,
         "student_name": student.name,
         "student_roll_number": student.roll_number,
+        "hostel_id": entry.hostel_id,
+        "hostel_name": entry.hostel_name,
         "date_time": entry.date_time,
         "shift": entry.shift,
         "items": items_response,

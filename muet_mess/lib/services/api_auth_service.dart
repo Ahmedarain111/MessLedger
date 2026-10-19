@@ -65,6 +65,9 @@ class ApiAuthService {
       orElse: () => UserRole.student,
     );
 
+    final hostelId = json['hostelId'] as String?;
+    final hostelName = json['hostelName'] as String?;
+
     if (role == UserRole.student) {
       return Student(
         id: id,
@@ -72,12 +75,16 @@ class ApiAuthService {
         username: username,
         rollNumber: rollNumber ?? 'N/A',
         roomNumber: roomNumber,
+        hostelId: hostelId,
+        hostelName: hostelName,
       );
     } else {
       return Manager(
         id: id,
         name: name,
         username: username,
+        hostelId: hostelId,
+        hostelName: hostelName,
       );
     }
   }

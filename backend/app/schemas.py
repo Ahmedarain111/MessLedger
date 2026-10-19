@@ -14,19 +14,51 @@ class Token(BaseModel):
     model_config = {"alias_generator": to_camel, "populate_by_name": True}
 
 
+class HostelBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    code: Optional[str] = Field(None, max_length=20)
+    is_active: bool = True
+
+    model_config = {"alias_generator": to_camel, "populate_by_name": True}
+
+
+class HostelCreate(HostelBase):
+    pass
+
+
+class HostelResponse(HostelBase):
+    id: str
+    created_at: datetime
+
+    model_config = {"alias_generator": to_camel, "populate_by_name": True, "from_attributes": True}
+
+
 class UserBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     role: UserRole
     username: str = Field(..., min_length=3, max_length=50)
     roll_number: Optional[str] = Field(None, max_length=50)
     room_number: Optional[str] = Field(None, max_length=20)
+    hostel_id: Optional[str] = None
+    hostel_name: Optional[str] = None
     is_active: bool = True
 
-    model_config = {"alias_generator": to_camel, "populate_by_name": True}
+    model_config = {"alias_generator": to_camel, "populate_by_name": True, "from_attributes": True}
 
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6, max_length=100)
+
+
+class StudentCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    roll_number: str = Field(..., min_length=1, max_length=50)
+    room_number: Optional[str] = Field(None, max_length=20)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    password: Optional[str] = Field(None, min_length=4, max_length=100)
+    hostel_id: Optional[str] = None
+
+    model_config = {"alias_generator": to_camel, "populate_by_name": True}
 
 
 class UserUpdate(BaseModel):
@@ -34,6 +66,7 @@ class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
     roll_number: Optional[str] = Field(None, max_length=50)
     room_number: Optional[str] = Field(None, max_length=20)
+    hostel_id: Optional[str] = None
     is_active: Optional[bool] = None
 
     model_config = {"alias_generator": to_camel, "populate_by_name": True}
@@ -109,6 +142,7 @@ class EntryItemResponse(BaseModel):
 
 class EntryBase(BaseModel):
     student_id: Optional[str] = None
+    hostel_id: Optional[str] = None
     date_time: Optional[datetime] = None
     shift: Optional[Shift] = None
     items: List[EntryItemBase] = Field(..., min_length=1)
@@ -129,6 +163,7 @@ class EntryCreate(EntryBase):
 
 
 class EntryUpdate(BaseModel):
+    hostel_id: Optional[str] = None
     date_time: Optional[datetime] = None
     shift: Optional[Shift] = None
     items: Optional[List[EntryItemBase]] = None
@@ -150,6 +185,8 @@ class EntryResponse(BaseModel):
     student_id: str
     student_name: str
     student_roll_number: Optional[str] = None
+    hostel_id: Optional[str] = None
+    hostel_name: Optional[str] = None
     date_time: datetime
     shift: Shift
     items: List[EntryItemResponse]
@@ -215,6 +252,8 @@ class StudentSummary(BaseModel):
     username: Optional[str] = None
     roll_number: Optional[str] = None
     room_number: Optional[str] = None
+    hostel_id: Optional[str] = None
+    hostel_name: Optional[str] = None
     outstanding: int
     overdue_amount: int
     awaiting_approval: int

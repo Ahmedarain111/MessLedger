@@ -13,6 +13,7 @@ class ApiMealService {
   /// Get entries for current student (or all if manager).
   Future<List<Meal>> getEntries({
     String? studentId,
+    String? hostelId,
     EntryStatus? status,
     Shift? shift,
     DateTime? fromDate,
@@ -25,6 +26,7 @@ class ApiMealService {
       'offset': offset,
     };
     if (studentId != null) query['studentId'] = studentId;
+    if (hostelId != null) query['hostelId'] = hostelId;
     if (status != null) query['status'] = status.name;
     if (shift != null) query['shift'] = shift.name;
     if (fromDate != null) query['fromDate'] = fromDate.toUtc().toIso8601String();
@@ -48,6 +50,7 @@ class ApiMealService {
     Shift? shift,
     String? note,
     String? studentId, // Only for manager
+    String? hostelId,
   }) async {
     if (items.isEmpty) throw Exception('Select at least one food item');
     for (final i in items) {
@@ -61,6 +64,7 @@ class ApiMealService {
     if (shift != null) data['shift'] = shift.name;
     if (note != null) data['note'] = note;
     if (studentId != null) data['studentId'] = studentId;
+    if (hostelId != null) data['hostelId'] = hostelId;
 
     final response = await _client.post('/entries', data: data);
     return _parseMeal(response as Map<String, dynamic>);
@@ -138,6 +142,8 @@ class ApiMealService {
       studentId: json['studentId'] as String,
       studentName: json['studentName'] as String?,
       studentRollNumber: json['studentRollNumber'] as String?,
+      hostelId: json['hostelId'] as String?,
+      hostelName: json['hostelName'] as String?,
       dateTime: DateTime.parse(json['dateTime'] as String),
       shift: Shift.values.firstWhere((s) => s.name == json['shift']),
       items: items,

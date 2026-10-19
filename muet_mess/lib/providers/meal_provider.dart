@@ -49,6 +49,7 @@ class MealProvider extends ChangeNotifier {
     Shift? shift,
     String? note,
     String? studentId,
+    String? hostelId,
   }) async {
     final m = await _service.createEntry(
       items: items,
@@ -56,6 +57,7 @@ class MealProvider extends ChangeNotifier {
       shift: shift,
       note: note,
       studentId: studentId,
+      hostelId: hostelId,
     );
     mine = [m, ...mine];
     notifyListeners();

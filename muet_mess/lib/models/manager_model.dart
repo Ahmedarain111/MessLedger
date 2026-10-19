@@ -5,11 +5,15 @@ class Manager extends AppUser {
     required super.id,
     required super.name,
     required super.username,
+    super.hostelId,
+    super.hostelName,
   }) : super(role: UserRole.manager);
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'username': username,
+        if (hostelId != null) 'hostelId': hostelId,
+        if (hostelName != null) 'hostelName': hostelName,
       };
 }

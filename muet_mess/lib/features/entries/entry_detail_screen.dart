@@ -161,6 +161,13 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
                       ]),
                       const SizedBox(height: 14),
                       Wrap(spacing: 6, runSpacing: 6, children: [
+                        if (entry.hostelName != null)
+                          StatusChip(
+                            label: entry.hostelName!,
+                            icon: Icons.apartment_rounded,
+                            background: scheme.surfaceContainerHighest,
+                            foreground: scheme.onSurfaceVariant,
+                          ),
                         StatusChip.style(entryStatusStyle(context, entry.entryStatus)),
                         if (approved) StatusChip.style(paymentStatusStyle(context, entry.paymentStatus)),
                         if (overdue) StatusChip.style(overdueStyle(context)),

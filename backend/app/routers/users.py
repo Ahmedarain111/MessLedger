@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import re
 from app.database import get_db
 from app.models import User, UserRole
-from app.schemas import UserResponse, StudentSummary, PaginatedResponse
+from app.schemas import UserResponse, StudentSummary, PaginatedResponse, StudentCreate
 from app.dependencies import get_current_user, require_roles
+from app.security import get_password_hash
 from app.services import get_student_balance, get_entry_response
 
 router = APIRouter(prefix="/students", tags=["Users"])
@@ -14,12 +16,15 @@ router = APIRouter(prefix="/students", tags=["Users"])
 def list_students(
     search: Optional[str] = None,
     sort: Optional[str] = None,
+    hostel_id: Optional[str] = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(require_roles(UserRole.manager)),
     db: Session = Depends(get_db),
 ):
     query = db.query(User).filter(User.role == UserRole.student)
+    if hostel_id:
+        query = query.filter(User.hostel_id == hostel_id)
     if search:
         search_term = f"%{search}%"
         query = query.filter(
@@ -41,6 +46,8 @@ def list_students(
                 username=s.username,
                 roll_number=s.roll_number,
                 room_number=s.room_number,
+                hostel_id=s.hostel_id,
+                hostel_name=s.hostel_name,
                 outstanding=get_student_balance(db, s.id)[0],
                 overdue_amount=0,
                 awaiting_approval=get_student_balance(db, s.id)[1]
@@ -61,6 +68,8 @@ def list_students(
             username=s.username,
             roll_number=s.roll_number,
             room_number=s.room_number,
+            hostel_id=s.hostel_id,
+            hostel_name=s.hostel_name,
             outstanding=get_student_balance(db, s.id)[0],
             overdue_amount=0,
             awaiting_approval=get_student_balance(db, s.id)[1]
@@ -69,6 +78,56 @@ def list_students(
         limit=limit,
         offset=offset
     )
+
+
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Create student account (manager)")
+def create_student(
+    request: StudentCreate,
+    current_user: User = Depends(require_roles(UserRole.manager)),
+    db: Session = Depends(get_db),
+):
+    # Username: custom or auto-generated from roll_number
+    username = request.username
+    if not username:
+        username = re.sub(r'[^a-zA-Z0-9]', '', request.roll_number).lower()
+        if len(username) < 3:
+            username = f"std_{username}"
+    else:
+        username = username.strip().lower()
+
+    # Check for existing roll number
+    existing_roll = db.query(User).filter(User.roll_number == request.roll_number.strip()).first()
+    if existing_roll:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": {"code": "ROLL_NUMBER_EXISTS", "message": f"Roll number '{request.roll_number}' is already registered", "details": None}},
+        )
+
+    # Check for existing username
+    existing_user = db.query(User).filter(User.username == username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": {"code": "USERNAME_TAKEN", "message": f"Username '{username}' already exists", "details": None}},
+        )
+
+    raw_password = request.password or "student123"
+    hostel_id = request.hostel_id or current_user.hostel_id
+
+    student = User(
+        name=request.name.strip(),
+        role=UserRole.student,
+        username=username,
+        password_hash=get_password_hash(raw_password),
+        roll_number=request.roll_number.strip(),
+        room_number=request.room_number.strip() if request.room_number else None,
+        hostel_id=hostel_id,
+        is_active=True,
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return UserResponse.model_validate(student)
 
 
 @router.get("/{student_id}", response_model=UserResponse, summary="Get student (manager or self)")

@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, dishes, users, entries, payments, dashboard
+from app.routers import auth, dishes, users, entries, payments, dashboard, hostels
 
 
 @asynccontextmanager
@@ -61,6 +61,7 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(entries.router, prefix="/api/v1")
 app.include_router(payments.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
+app.include_router(hostels.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Health"])

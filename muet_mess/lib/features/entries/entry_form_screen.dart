@@ -6,12 +6,14 @@ import '../../core/utils/currency_utils.dart';
 import '../../core/utils/date_utils.dart';
 import '../../models/enums.dart';
 import '../../models/food_item_model.dart';
+import '../../models/hostel_model.dart';
 import '../../models/meal_item_model.dart';
 import '../../models/student_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/student_provider.dart';
+import '../../services/api_hostel_service.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../widgets/common/dialogs.dart';
 import '../../widgets/common/food_image.dart';
@@ -35,9 +37,11 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
   DateTime _dateTime = DateTime.now();
   Shift _shift = Shift.lunch;
   String? _studentId;
+  String? _hostelId;
   final Map<String, int> _quantities = {};
   final _note = TextEditingController();
   Future<List<Student>>? _studentsFuture;
+  Future<List<Hostel>>? _hostelsFuture;
   bool _submitting = false;
 
   @override
@@ -45,6 +49,7 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
     super.initState();
     _shift = _autoShift(_dateTime);
     _studentId = widget.studentId;
+    _hostelsFuture = ApiHostelService().getHostels();
     if (widget.isManager) {
       _studentsFuture = context.read<StudentProvider>().listStudents();
     }
@@ -63,6 +68,7 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
       _dateTime = entry.dateTime;
       _shift = entry.shift;
       _studentId = entry.studentId;
+      _hostelId = entry.hostelId;
       for (final item in entry.items) {
         _quantities[item.dishId] = item.quantity;
       }
@@ -120,12 +126,15 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
           reason: _note.text.trim().isEmpty ? 'Updated' : _note.text.trim(),
         );
       } else {
+        final authUser = auth.user;
+        final selectedHostelId = _hostelId ?? authUser?.hostelId;
         await context.read<MealProvider>().submit(
           items: items,
           dateTime: _dateTime,
           shift: _shift,
           note: _note.text.trim().isEmpty ? null : _note.text.trim(),
           studentId: widget.isManager ? sid : null,
+          hostelId: selectedHostelId,
         );
       }
       if (!mounted) return;
@@ -195,6 +204,31 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
             ),
             const SizedBox(height: 14),
           ],
+          FutureBuilder<List<Hostel>>(
+            future: _hostelsFuture,
+            builder: (context, snap) {
+              final hostels = snap.data ?? [];
+              if (hostels.isEmpty) return const SizedBox.shrink();
+              final authUser = context.read<AuthProvider>().user;
+              final defaultHostelId = _hostelId ?? (hostels.any((h) => h.id == authUser?.hostelId) ? authUser?.hostelId : hostels.first.id);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: DropdownButtonFormField<String>(
+                  value: _hostelId ?? defaultHostelId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Hostel Mess',
+                    prefixIcon: Icon(Icons.apartment_outlined),
+                  ),
+                  items: hostels.map((h) => DropdownMenuItem(
+                    value: h.id,
+                    child: Text('${h.name} Mess', overflow: TextOverflow.ellipsis),
+                  )).toList(),
+                  onChanged: (v) => setState(() => _hostelId = v),
+                ),
+              );
+            },
+          ),
           OutlinedButton.icon(
             onPressed: _pickDate,
             icon: const Icon(Icons.calendar_today_outlined, size: 18),

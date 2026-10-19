@@ -22,6 +22,7 @@ router = APIRouter(prefix="/entries", tags=["Entries"])
 @router.get("", response_model=PaginatedResponse[EntryResponse], summary="List entries")
 def list_entries(
     student_id: Optional[str] = None,
+    hostel_id: Optional[str] = None,
     status: Optional[EntryStatus] = None,
     shift: Optional[Shift] = None,
     from_date: Optional[datetime] = None,
@@ -38,6 +39,8 @@ def list_entries(
     elif student_id:
         query = query.filter(Entry.student_id == student_id)
     
+    if hostel_id:
+        query = query.filter(Entry.hostel_id == hostel_id)
     if status:
         query = query.filter(Entry.entry_status == status)
     if shift:
@@ -115,8 +118,11 @@ def create_entry(
     
     shift = entry_in.shift or detect_shift(date_time)
     
+    hostel_id = entry_in.hostel_id or (target_student.hostel_id if target_student else None) or current_user.hostel_id
+    
     entry = Entry(
         student_id=student_id,
+        hostel_id=hostel_id,
         date_time=date_time,
         shift=shift,
         entry_status=entry_status,
@@ -156,6 +162,8 @@ def update_entry(
             detail={"error": {"code": "CONFLICT", "message": "Cannot edit fully paid entry. Reopen it first.", "details": None}},
         )
     
+    if entry_in.hostel_id is not None:
+        entry.hostel_id = entry_in.hostel_id
     if entry_in.date_time is not None:
         entry.date_time = validate_entry_date(entry_in.date_time, current_user.role)
     if entry_in.shift is not None:

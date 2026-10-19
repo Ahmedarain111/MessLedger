@@ -206,7 +206,7 @@ class _BrandPanel extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Mess Khata', style: text.headlineSmall?.copyWith(color: onHero)),
+                      Text('Mess Ledger', style: text.headlineSmall?.copyWith(color: onHero)),
                       const SizedBox(height: 4),
                       Text('Mehran UET, Jamshoro', style: text.bodyMedium?.copyWith(color: onHero.withValues(alpha: 0.75))),
                     ]),
@@ -215,7 +215,7 @@ class _BrandPanel extends StatelessWidget {
               : Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   const BrandLogo(size: 76),
                   const SizedBox(height: 32),
-                  Text('Hostel Mess Khata', style: text.displaySmall?.copyWith(color: onHero)),
+                  Text('Hostel Mess Ledger', style: text.displaySmall?.copyWith(color: onHero)),
                   const SizedBox(height: 12),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),

@@ -40,6 +40,19 @@ class PaymentStatus(str, enum.Enum):
     paid = "paid"
 
 
+class Hostel(Base):
+    __tablename__ = "hostels"
+
+    id = Column(String(36), primary_key=True, default=gen_uuid)
+    name = Column(String(100), unique=True, nullable=False)
+    code = Column(String(20), unique=True, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    users = relationship("User", back_populates="hostel")
+    entries = relationship("Entry", back_populates="hostel")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -50,13 +63,19 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     roll_number = Column(String(50), nullable=True)
     room_number = Column(String(20), nullable=True)
+    hostel_id = Column(String(36), ForeignKey("hostels.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
+    hostel = relationship("Hostel", back_populates="users", foreign_keys=[hostel_id])
     entries = relationship("Entry", back_populates="student", foreign_keys="Entry.student_id")
     created_entries = relationship("Entry", back_populates="creator", foreign_keys="Entry.created_by")
     payments = relationship("Payment", back_populates="student", foreign_keys="Payment.student_id")
     recorded_payments = relationship("Payment", back_populates="recorder", foreign_keys="Payment.recorded_by")
+
+    @property
+    def hostel_name(self) -> Optional[str]:
+        return self.hostel.name if self.hostel else None
 
 
 class Dish(Base):
@@ -79,6 +98,7 @@ class Entry(Base):
 
     id = Column(String(36), primary_key=True, default=gen_uuid)
     student_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    hostel_id = Column(String(36), ForeignKey("hostels.id"), nullable=True)
     date_time = Column(DateTime(timezone=True), nullable=False)
     shift = Column(Enum(Shift), nullable=False)
     entry_status = Column(Enum(EntryStatus), default=EntryStatus.pending, nullable=False)
@@ -94,10 +114,15 @@ class Entry(Base):
     last_edited_by = Column(String(36), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
+    hostel = relationship("Hostel", back_populates="entries", foreign_keys=[hostel_id])
     student = relationship("User", back_populates="entries", foreign_keys=[student_id])
     creator = relationship("User", back_populates="created_entries", foreign_keys=[created_by])
     items = relationship("EntryItem", back_populates="entry", cascade="all, delete-orphan")
     allocations = relationship("PaymentAllocation", back_populates="entry")
+
+    @property
+    def hostel_name(self) -> Optional[str]:
+        return self.hostel.name if self.hostel else None
 
 
 class EntryItem(Base):

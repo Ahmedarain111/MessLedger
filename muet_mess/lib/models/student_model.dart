@@ -7,6 +7,8 @@ class Student extends AppUser {
     required super.username,
     required this.rollNumber,
     this.roomNumber,
+    super.hostelId,
+    super.hostelName,
   }) : super(role: UserRole.student);
 
   final String rollNumber;
@@ -18,5 +20,7 @@ class Student extends AppUser {
         'username': username,
         'rollNumber': rollNumber,
         'roomNumber': roomNumber,
+        if (hostelId != null) 'hostelId': hostelId,
+        if (hostelName != null) 'hostelName': hostelName,
       };
 }

@@ -3,12 +3,21 @@ export 'enums.dart' show UserRole;
 
 /// Common fields shared by student and manager accounts.
 abstract class AppUser {
-  AppUser({required this.id, required this.name, required this.username, required this.role});
+  AppUser({
+    required this.id,
+    required this.name,
+    required this.username,
+    required this.role,
+    this.hostelId,
+    this.hostelName,
+  });
 
   final String id;
   final String name;
   final String username;
   final UserRole role;
+  final String? hostelId;
+  final String? hostelName;
 }
 
 class AuthSession {

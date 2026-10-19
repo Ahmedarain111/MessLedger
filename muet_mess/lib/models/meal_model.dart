@@ -10,6 +10,8 @@ class Meal {
     required this.studentId,
     this.studentName,
     this.studentRollNumber,
+    this.hostelId,
+    this.hostelName,
     required this.dateTime,
     required this.shift,
     required this.items,
@@ -32,6 +34,8 @@ class Meal {
   final String studentId;
   final String? studentName;
   final String? studentRollNumber;
+  final String? hostelId;
+  final String? hostelName;
   final DateTime dateTime;
   final Shift shift;
   List<MealItem> items;
@@ -73,6 +77,8 @@ class Meal {
     String? studentId,
     String? studentName,
     String? studentRollNumber,
+    String? hostelId,
+    String? hostelName,
     DateTime? dateTime,
     Shift? shift,
     List<MealItem>? items,
@@ -95,6 +101,8 @@ class Meal {
       studentId: studentId ?? this.studentId,
       studentName: studentName ?? this.studentName,
       studentRollNumber: studentRollNumber ?? this.studentRollNumber,
+      hostelId: hostelId ?? this.hostelId,
+      hostelName: hostelName ?? this.hostelName,
       dateTime: dateTime ?? this.dateTime,
       shift: shift ?? this.shift,
       items: items ?? this.items,

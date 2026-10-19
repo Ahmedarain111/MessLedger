@@ -4,10 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/common_widgets.dart';
 import '../../models/enums.dart';
+import '../../models/hostel_model.dart';
 import '../../models/meal_model.dart';
 import '../../models/student_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
 import '../../providers/student_provider.dart';
+import '../../services/api_hostel_service.dart';
+import '../../widgets/common/dialogs.dart';
 import '../../widgets/common/layout_widgets.dart';
 import '../../widgets/common/motion.dart';
 import '../../widgets/common/skeleton.dart';
@@ -183,6 +187,152 @@ class _ManagerStudentsScreenState extends State<ManagerStudentsScreen> {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'manager_add_student_fab',
+        icon: const Icon(Icons.person_add_outlined),
+        label: const Text('Add Student'),
+        onPressed: () => _showAddStudentDialog(context),
+      ),
+    );
+  }
+
+  Future<void> _showAddStudentDialog(BuildContext context) async {
+    final nameCtrl = TextEditingController();
+    final rollCtrl = TextEditingController();
+    final roomCtrl = TextEditingController();
+    final usernameCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final authUser = context.read<AuthProvider>().user;
+    final hostelsFuture = ApiHostelService().getHostels();
+    String? selectedHostelId = authUser?.hostelId;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Add New Student'),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: nameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Full Name *',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter student name' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: rollCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Roll Number *',
+                            hintText: 'e.g. 21CS045',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter roll number' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: roomCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Room Number (optional)',
+                            hintText: 'e.g. A-102',
+                            prefixIcon: Icon(Icons.meeting_room_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        FutureBuilder<List<Hostel>>(
+                          future: hostelsFuture,
+                          builder: (context, snap) {
+                            final hostels = snap.data ?? [];
+                            if (hostels.isEmpty) return const SizedBox.shrink();
+                            selectedHostelId ??= (hostels.any((h) => h.id == authUser?.hostelId)
+                                ? authUser?.hostelId
+                                : hostels.first.id);
+                            return DropdownButtonFormField<String>(
+                              value: selectedHostelId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Assigned Hostel',
+                                prefixIcon: Icon(Icons.apartment_outlined),
+                              ),
+                              items: hostels.map((h) => DropdownMenuItem(
+                                value: h.id,
+                                child: Text(h.name, overflow: TextOverflow.ellipsis),
+                              )).toList(),
+                              onChanged: (v) => setDialogState(() => selectedHostelId = v),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: usernameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Username (optional)',
+                            helperText: 'Leave blank to use roll number',
+                            prefixIcon: Icon(Icons.account_circle_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: passwordCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Password (optional)',
+                            helperText: 'Default: student123',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                          obscureText: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+                    try {
+                      await context.read<StudentProvider>().createStudent(
+                        name: nameCtrl.text.trim(),
+                        rollNumber: rollCtrl.text.trim(),
+                        roomNumber: roomCtrl.text.trim().isEmpty ? null : roomCtrl.text.trim(),
+                        username: usernameCtrl.text.trim().isEmpty ? null : usernameCtrl.text.trim(),
+                        password: passwordCtrl.text.trim().isEmpty ? null : passwordCtrl.text.trim(),
+                        hostelId: selectedHostelId,
+                      );
+                      if (context.mounted) {
+                        Navigator.of(dialogCtx).pop();
+                        showSuccess(context, 'Student account for ${nameCtrl.text.trim()} created successfully.');
+                        _refresh();
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        showError(context, e.toString().replaceFirst('Exception: ', ''));
+                      }
+                    }
+                  },
+                  child: const Text('Add Account'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

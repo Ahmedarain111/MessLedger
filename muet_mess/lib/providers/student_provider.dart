@@ -43,12 +43,42 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<Student>> listStudents({String? search, String? sort}) async {
+  Future<List<Student>> listStudents({String? search, String? sort, String? hostelId}) async {
     try {
-      return await _service.listStudents(search: search, sort: sort);
+      return await _service.listStudents(search: search, sort: sort, hostelId: hostelId);
     } catch (e) {
       error = e.toString();
       return [];
+    }
+  }
+
+  Future<Student?> createStudent({
+    required String name,
+    required String rollNumber,
+    String? roomNumber,
+    String? username,
+    String? password,
+    String? hostelId,
+  }) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      final student = await _service.createStudent(
+        name: name,
+        rollNumber: rollNumber,
+        roomNumber: roomNumber,
+        username: username,
+        password: password,
+        hostelId: hostelId,
+      );
+      return student;
+    } catch (e) {
+      error = e.toString().replaceFirst('Exception: ', '');
+      rethrow;
+    } finally {
+      loading = false;
+      notifyListeners();
     }
   }
 }

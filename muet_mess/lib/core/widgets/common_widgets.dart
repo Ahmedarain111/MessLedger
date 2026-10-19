@@ -295,7 +295,10 @@ class EntryCard extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(displayName, style: text.titleSmall?.copyWith(fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
-                  Text('${dateText(entry.dateTime)} • ${shiftLabel(entry.shift.name)}', style: text.bodySmall),
+                  Text(
+                    '${dateText(entry.dateTime)} • ${shiftLabel(entry.shift.name)}${entry.hostelName != null ? ' • ${entry.hostelName}' : ''}',
+                    style: text.bodySmall,
+                  ),
                 ]),
               ),
               const SizedBox(width: 8),
@@ -316,6 +319,12 @@ class EntryCard extends StatelessWidget {
             ]),
             const SizedBox(height: 12),
             Wrap(spacing: 6, runSpacing: 6, children: [
+              if (entry.hostelName != null)
+                StatusChip(
+                  label: '${entry.hostelName} Mess',
+                  color: scheme.primary,
+                  icon: Icons.apartment_outlined,
+                ),
               StatusChip.style(entryStatusStyle(context, entry.entryStatus)),
               if (approved) StatusChip.style(paymentStatusStyle(context, entry.paymentStatus)),
               if (overdue) StatusChip.style(overdueStyle(context)),

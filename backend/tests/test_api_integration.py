@@ -419,6 +419,69 @@ class TestMessLedgerAPI(unittest.TestCase):
         self.assertEqual(res_s_alias.status_code, 200)
         self.assertEqual(res_s_alias.json()["outstanding"], s_data["outstanding"])
 
+    # ==========================================
+    # 8. Hostels & Student Account Creation
+    # ==========================================
+    def test_22_hostels_list(self):
+        res = self.client.get("/api/v1/hostels", headers=self.student1_headers)
+        self.assertEqual(res.status_code, 200)
+        hostels = res.json()
+        self.assertGreaterEqual(len(hostels), 4)
+        names = [h["name"] for h in hostels]
+        self.assertIn("Sheikh Sindhi", names)
+        self.assertIn("GM Syed", names)
+        self.assertIn("Jatoi", names)
+        self.assertIn("Rashidi", names)
+
+    def test_23_create_student_account(self):
+        # Manager adds a new student account
+        hostels_res = self.client.get("/api/v1/hostels", headers=self.manager_headers)
+        ss_hostel_id = [h["id"] for h in hostels_res.json() if h["name"] == "Sheikh Sindhi"][0]
+
+        student_payload = {
+            "name": "Bilal Tariq",
+            "rollNumber": "21CS099",
+            "roomNumber": "C-301",
+            "hostelId": ss_hostel_id
+        }
+        res = self.client.post("/api/v1/students", headers=self.manager_headers, json=student_payload)
+        self.assertEqual(res.status_code, 201)
+        created = res.json()
+        self.assertEqual(created["name"], "Bilal Tariq")
+        self.assertEqual(created["rollNumber"], "21CS099")
+        self.assertEqual(created["hostelName"], "Sheikh Sindhi")
+        self.assertEqual(created["role"], "student")
+
+        # Test duplicate roll number rejection
+        res_dup = self.client.post("/api/v1/students", headers=self.manager_headers, json=student_payload)
+        self.assertEqual(res_dup.status_code, 409)
+        self.assertEqual(res_dup.json()["error"]["code"], "ROLL_NUMBER_EXISTS")
+
+        # Student cannot create student account (403)
+        res_fail = self.client.post("/api/v1/students", headers=self.student1_headers, json={"name": "X", "rollNumber": "Y"})
+        self.assertEqual(res_fail.status_code, 403)
+
+    def test_24_entry_with_hostel_choice(self):
+        hostels_res = self.client.get("/api/v1/hostels", headers=self.student1_headers)
+        gms_hostel_id = [h["id"] for h in hostels_res.json() if h["name"] == "GM Syed"][0]
+
+        # Student creates entry choosing GM Syed hostel
+        dish = self.client.get("/api/v1/dishes", headers=self.student1_headers).json()["items"][0]
+        res = self.client.post(
+            "/api/v1/entries",
+            headers=self.student1_headers,
+            json={
+                "hostelId": gms_hostel_id,
+                "shift": "lunch",
+                "items": [{"dishId": dish["id"], "quantity": 1}],
+                "note": "Ate lunch at GM Syed"
+            }
+        )
+        self.assertEqual(res.status_code, 201)
+        data = res.json()
+        self.assertEqual(data["hostelId"], gms_hostel_id)
+        self.assertEqual(data["hostelName"], "GM Syed")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,7 @@ class SplashScreen extends StatelessWidget {
                   FadeSlideIn(
                     index: 1,
                     child: Text(
-                      'Hostel Mess Khata',
+                      'Hostel Mess Ledger',
                       textAlign: TextAlign.center,
                       style: text.headlineMedium?.copyWith(color: onHero),
                     ),
