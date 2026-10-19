@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 class AppConstants {
   AppConstants._();
 
-  static const appName = 'Mess Khata';
+  static const appName = 'Mess Ledger';
   static const currencySymbol = 'Rs.';
   static const tokenKey = 'auth_token';
   static const userIdKey = 'auth_user_id';
