@@ -1,0 +1,13 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - tools/**
+
+linter:
+  rules:
+    # Async gaps inside screens that are safe in this mock app.
+    use_build_context_synchronously: false
+    # Verbose legacy list formatting style in seed data.
+    prefer_const_constructors: false
+    sort_child_properties_last: false

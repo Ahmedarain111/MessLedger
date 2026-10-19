@@ -1,0 +1,1 @@
+from app.routers import auth, dishes, users, entries, payments, dashboard

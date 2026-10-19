@@ -1,0 +1,77 @@
+# ==========================================
+# Agents & Logs (Hidden per user request)
+# ==========================================
+*AGENTS*.md
+*agents*.md
+*LOG*.md
+*log*.md
+*.log
+
+# ==========================================
+# Python & Backend
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+backend/.venv/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+mess_ledger.db
+backend/mess_ledger.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# ==========================================
+# Flutter / Dart
+# ==========================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+build/
+**/build/
+**/.dart_tool/
+
+# ==========================================
+# IDE & System Files
+# ==========================================
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
