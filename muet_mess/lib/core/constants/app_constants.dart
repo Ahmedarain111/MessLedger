@@ -19,7 +19,7 @@ class AppConstants {
   static const requestTimeoutSeconds = 30;
   static const overdueThreshold = Duration(days: 7);
 
-  static const demoStudentUsername = 'ahmedkhan';
+  static const demoStudentUsername = 'ahmed';
   static const demoStudentPassword = 'student123';
   static const demoManagerUsername = 'manager';
   static const demoManagerPassword = 'manager123';

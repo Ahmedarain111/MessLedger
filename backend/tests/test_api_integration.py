@@ -24,15 +24,15 @@ class TestMessLedgerAPI(unittest.TestCase):
         cls.manager_headers = {"Authorization": f"Bearer {cls.manager_token}"}
         cls.manager_id = res_m.json()["user"]["id"]
 
-        # Login student 1 (ahmedkhan)
-        res_s1 = cls.client.post("/api/v1/auth/login", json={"username": "ahmedkhan", "password": "student123"})
+        # Login student 1 (ahmed)
+        res_s1 = cls.client.post("/api/v1/auth/login", json={"username": "ahmed", "password": "student123"})
         assert res_s1.status_code == 200, f"Student 1 login failed: {res_s1.text}"
         cls.student1_token = res_s1.json()["accessToken"]
         cls.student1_headers = {"Authorization": f"Bearer {cls.student1_token}"}
         cls.student1_id = res_s1.json()["user"]["id"]
 
-        # Login student 2 (fatimaali)
-        res_s2 = cls.client.post("/api/v1/auth/login", json={"username": "fatimaali", "password": "student123"})
+        # Login student 2 (umer)
+        res_s2 = cls.client.post("/api/v1/auth/login", json={"username": "umer", "password": "student123"})
         assert res_s2.status_code == 200, f"Student 2 login failed: {res_s2.text}"
         cls.student2_token = res_s2.json()["accessToken"]
         cls.student2_headers = {"Authorization": f"Bearer {cls.student2_token}"}
@@ -66,7 +66,7 @@ class TestMessLedgerAPI(unittest.TestCase):
 
         res_s = self.client.get("/api/v1/auth/me", headers=self.student1_headers)
         self.assertEqual(res_s.status_code, 200)
-        self.assertEqual(res_s.json()["username"], "ahmedkhan")
+        self.assertEqual(res_s.json()["username"], "ahmed")
         self.assertEqual(res_s.json()["role"], "student")
 
     def test_04_auth_me_unauthenticated(self):
@@ -81,7 +81,7 @@ class TestMessLedgerAPI(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertIn("items", data)
-        self.assertGreaterEqual(len(data["items"]), 4)
+        self.assertGreaterEqual(len(data["items"]), 3)
 
     def test_06_list_students_as_student_forbidden(self):
         res = self.client.get("/api/v1/students", headers=self.student1_headers)
@@ -91,7 +91,7 @@ class TestMessLedgerAPI(unittest.TestCase):
         # Manager can view student 1
         res = self.client.get(f"/api/v1/students/{self.student1_id}", headers=self.manager_headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()["username"], "ahmedkhan")
+        self.assertEqual(res.json()["username"], "ahmed")
 
         # Student 1 can view own profile
         res = self.client.get(f"/api/v1/students/{self.student1_id}", headers=self.student1_headers)

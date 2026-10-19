@@ -216,13 +216,12 @@ flutter run -d chrome
 
 After running `python -m scripts.seed --reset`, the database is populated with the following demo accounts:
 
-| Role | Username | Password |
-|------|----------|----------|
-| **Mess Manager** | `manager` | `manager123` |
-| **Student** | `ahmedkhan` | `student123` |
-| **Student** | `fatimaali` | `student123` |
-| **Student** | `hassanahmed` | `student123` |
-| **Student** | `zaramalik` | `student123` |
+| Role | Name | Roll Number | Username | Password | Assigned Hostel |
+|------|------|-------------|----------|----------|-----------------|
+| **Mess Manager** | Manager | — | `manager` | `manager123` | Sheikh Sindhi |
+| **Student** | Ahmed | `23CS032` | `ahmed` | `student123` | Sheikh Sindhi |
+| **Student** | Umer | `23CS028` | `umer` | `student123` | GM Syed |
+| **Student** | Waqar | `23CS088` | `waqar` | `student123` | Jatoi |
 
 ---
 

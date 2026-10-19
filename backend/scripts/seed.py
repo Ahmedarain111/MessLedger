@@ -78,46 +78,36 @@ def seed_db(reset: bool = False):
         for m in managers:
             db.add(m)
         
-        # 3. Seed Students
+        # 3. Seed Students (Boys only: Ahmed, Umer, Waqar)
         students = [
             User(
-                name="Ahmed Khan",
+                name="Ahmed",
                 role=UserRole.student,
-                username="ahmedkhan",
+                username="ahmed",
                 password_hash=get_password_hash("student123"),
-                roll_number="CS2021001",
+                roll_number="23CS032",
                 room_number="A-101",
                 hostel_id=hostels_map["Sheikh Sindhi"].id,
                 is_active=True
             ),
             User(
-                name="Fatima Ali",
+                name="Umer",
                 role=UserRole.student,
-                username="fatimaali",
+                username="umer",
                 password_hash=get_password_hash("student123"),
-                roll_number="CS2021002",
-                room_number="A-102",
+                roll_number="23CS028",
+                room_number="B-201",
                 hostel_id=hostels_map["GM Syed"].id,
                 is_active=True
             ),
             User(
-                name="Hassan Ahmed",
+                name="Waqar",
                 role=UserRole.student,
-                username="hassanahmed",
+                username="waqar",
                 password_hash=get_password_hash("student123"),
-                roll_number="EE2021001",
-                room_number="B-201",
+                roll_number="23CS088",
+                room_number="C-301",
                 hostel_id=hostels_map["Jatoi"].id,
-                is_active=True
-            ),
-            User(
-                name="Zara Malik",
-                role=UserRole.student,
-                username="zaramalik",
-                password_hash=get_password_hash("student123"),
-                roll_number="ME2021001",
-                room_number="B-202",
-                hostel_id=hostels_map["Rashidi"].id,
                 is_active=True
             ),
         ]
@@ -228,7 +218,7 @@ def seed_db(reset: bool = False):
         db.commit()
         print("Database seeded successfully!")
         print("Manager: username=manager, password=manager123")
-        print("Students: username=ahmedkhan/fatimaali/hassanahmed/zaramalik, password=student123")
+        print("Students: username=ahmed/umer/waqar (Roll: 23CS032/23CS028/23CS088), password=student123")
         
     except Exception as e:
         db.rollback()
