@@ -7,8 +7,8 @@ void main() {
   testWidgets('app boots properly', (tester) async {
     final auth = AuthProvider();
     final theme = ThemeProvider();
-    await tester.pumpWidget(MessKhataApp(auth: auth, theme: theme));
+    await tester.pumpWidget(MessLedgerApp(auth: auth, theme: theme));
     await tester.pump();
-    expect(find.byType(MessKhataApp), findsOneWidget);
+    expect(find.byType(MessLedgerApp), findsOneWidget);
   });
 }

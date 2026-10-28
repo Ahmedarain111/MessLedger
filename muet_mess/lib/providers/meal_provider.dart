@@ -139,4 +139,18 @@ class MealProvider extends ChangeNotifier {
       offset: offset,
     );
   }
+
+  Future<List<Meal>> getEntriesForStudent(
+    String studentId, {
+    EntryStatus? status,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    return _service.getEntries(
+      studentId: studentId,
+      status: status,
+      limit: limit,
+      offset: offset,
+    );
+  }
 }

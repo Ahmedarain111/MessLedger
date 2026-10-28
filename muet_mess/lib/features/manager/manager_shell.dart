@@ -8,11 +8,13 @@ import '../../core/utils/date_utils.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/status_style.dart';
+import '../../models/dashboard_model.dart';
 import '../../models/enums.dart';
 import '../../models/food_item_model.dart';
 import '../../models/meal_model.dart';
 import '../../models/student_model.dart';
 import '../../models/user_model.dart';
+import '../../services/api_dashboard_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
 import '../../providers/menu_provider.dart';
@@ -94,21 +96,22 @@ class _Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<_Dashboard> {
+  late Future<ManagerDashboardSummary> _summaryFuture;
   late Future<List<Meal>> _entriesFuture;
-  late Future<List<Student>> _studentsFuture;
 
   @override
   void initState() {
     super.initState();
-    _entriesFuture = context.read<MealProvider>().getAllEntries();
-    _studentsFuture = context.read<StudentProvider>().listStudents();
+    _load();
+  }
+
+  void _load() {
+    _summaryFuture = ApiDashboardService().getManagerSummary();
+    _entriesFuture = context.read<MealProvider>().getAllEntries(limit: 10);
   }
 
   Future<void> _refresh() async {
-    setState(() {
-      _entriesFuture = context.read<MealProvider>().getAllEntries();
-      _studentsFuture = context.read<StudentProvider>().listStudents();
-    });
+    setState(_load);
   }
 
   PreferredSizeWidget _appBar(BuildContext context) {
@@ -133,43 +136,31 @@ class _DashboardState extends State<_Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Meal>>(
-      future: _entriesFuture,
-      builder: (context, entriesSnapshot) {
-        if (entriesSnapshot.connectionState == ConnectionState.waiting) {
+    return FutureBuilder<ManagerDashboardSummary>(
+      future: _summaryFuture,
+      builder: (context, summarySnapshot) {
+        if (summarySnapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(appBar: _appBar(context), body: const DashboardSkeleton());
         }
-        if (entriesSnapshot.hasError) {
+        if (summarySnapshot.hasError) {
           return Scaffold(
             appBar: _appBar(context),
-            body: ErrorState(title: 'Could not load dashboard', message: entriesSnapshot.error.toString(), onRetry: _refresh),
+            body: ErrorState(title: 'Could not load dashboard', message: summarySnapshot.error.toString(), onRetry: _refresh),
           );
         }
 
-        return FutureBuilder<List<Student>>(
-          future: _studentsFuture,
-          builder: (context, studentsSnapshot) {
+        return FutureBuilder<List<Meal>>(
+          future: _entriesFuture,
+          builder: (context, entriesSnapshot) {
+            final summary = summarySnapshot.data!;
             final entries = entriesSnapshot.data ?? [];
-            final students = studentsSnapshot.data ?? [];
-            final studentNames = {for (final s in students) s.id: s.name};
-            final approved = entries.where((e) => e.entryStatus == EntryStatus.approved).toList();
-            final now = DateTime.now();
-            bool isToday(Meal e) => e.dateTime.day == now.day && e.dateTime.month == now.month && e.dateTime.year == now.year;
-            final todayEntries = entries.where(isToday).toList();
-            final sales = todayEntries.fold(0, (s, e) => s + e.totalAmount);
-            final outstanding = approved.fold(0, (s, e) => s + e.outstanding);
-            final pending = entries.where((e) => e.entryStatus == EntryStatus.pending).length;
-            final disputed = entries.where((e) => e.isDisputed).length;
-            final overdue = approved.where((e) => e.outstanding > 0 && isOverdue(e.dateTime)).fold(0, (s, e) => s + e.outstanding);
-            final todayByShift = <Shift, int>{for (final shift in Shift.values) shift: 0};
-            for (final e in todayEntries) {
-              todayByShift[e.shift] = (todayByShift[e.shift] ?? 0) + e.totalAmount;
-            }
-            final defaulters = students
-                .map((s) => (s.name, approved.where((e) => e.studentId == s.id).fold(0, (sum, e) => sum + e.outstanding)))
-                .where((row) => row.$2 > 0)
-                .toList()
-              ..sort((a, b) => b.$2.compareTo(a.$2));
+            final sales = summary.todaySales;
+            final outstanding = summary.totalOutstanding;
+            final pending = summary.pendingApprovals;
+            final disputed = summary.disputedEntries;
+            final overdue = summary.overdueAmount;
+            final todayByShift = summary.todayByShift;
+            final defaulters = summary.topDefaulters.map((s) => (s.name, s.outstanding)).toList();
             final tokens = context.tokens;
 
             return Scaffold(
@@ -182,7 +173,7 @@ class _DashboardState extends State<_Dashboard> {
                       child: BalanceCard(
                         amount: sales,
                         title: "Today's sales",
-                        subtitle: '${todayEntries.length} ${todayEntries.length == 1 ? 'entry' : 'entries'} recorded today',
+                        subtitle: "Across all shifts today",
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -222,7 +213,7 @@ class _DashboardState extends State<_Dashboard> {
                           index: i,
                           child: EntryCard(
                             entry: entries[i],
-                            studentName: entries[i].studentName ?? studentNames[entries[i].studentId],
+                            studentName: entries[i].studentName ?? 'Student',
                             onTap: () => context.push('/entries/${entries[i].id}'),
                           ),
                         ),

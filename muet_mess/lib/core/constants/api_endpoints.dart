@@ -1,21 +1,19 @@
-/// Centralized API endpoint definitions (future Django REST API).
+/// Centralized API endpoint constants for FastAPI backend (/api/v1).
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const login = '/auth/login/';
-  static const register = '/auth/register/';
-  static const logout = '/auth/logout/';
-  static const hostels = '/hostels/';
-  static const students = '/students/';
-  static const managers = '/managers/';
-  static const khatas = '/khatas/';
-  static const menus = '/menus/';
-  static const meals = '/meals/';
-  static const payments = '/payments/';
-  static const notifications = '/notifications/';
-  static const reports = '/reports/';
+  static const login = '/auth/login';
+  static const me = '/auth/me';
+  static const hostels = '/hostels';
+  static const students = '/students';
+  static const dishes = '/dishes';
+  static const entries = '/entries';
+  static const payments = '/payments';
+  static const dashboardSummary = '/dashboard/summary';
+  static const mySummary = '/dashboard/me/summary';
 
-  static String khata(String id) => '/khatas/$id/';
-  static String meal(String id) => '/meals/$id/';
-  static String student(String id) => '/students/$id/';
+  static String entry(String id) => '/entries/$id';
+  static String student(String id) => '/students/$id';
+  static String studentPayments(String studentId) => '/students/$studentId/payments';
+  static String studentPaymentPreview(String studentId) => '/students/$studentId/payment-preview';
 }

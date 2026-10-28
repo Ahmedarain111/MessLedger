@@ -61,7 +61,7 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False)
     username = Column(String(50), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    roll_number = Column(String(50), nullable=True)
+    roll_number = Column(String(50), nullable=True, index=True)
     room_number = Column(String(20), nullable=True)
     hostel_id = Column(String(36), ForeignKey("hostels.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)

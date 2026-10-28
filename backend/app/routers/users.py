@@ -32,26 +32,31 @@ def list_students(
             (User.username.ilike(search_term)) |
             (User.roll_number.ilike(search_term))
         )
+    def to_summary(s: User) -> StudentSummary:
+        outstanding, awaiting = get_student_balance(db, s.id)
+        return StudentSummary(
+            id=s.id,
+            name=s.name,
+            username=s.username,
+            roll_number=s.roll_number,
+            room_number=s.room_number,
+            hostel_id=s.hostel_id,
+            hostel_name=s.hostel_name,
+            outstanding=outstanding,
+            overdue_amount=0,
+            awaiting_approval=awaiting
+        )
+
     if sort == "name":
         query = query.order_by(User.name)
     elif sort == "outstanding":
         students = query.all()
-        students.sort(key=lambda s: get_student_balance(db, s.id)[0], reverse=True)
-        total = len(students)
-        paginated = students[offset:offset + limit]
+        summaries = [to_summary(s) for s in students]
+        summaries.sort(key=lambda s: s.outstanding, reverse=True)
+        total = len(summaries)
+        paginated = summaries[offset:offset + limit]
         return PaginatedResponse(
-            items=[StudentSummary(
-                id=s.id,
-                name=s.name,
-                username=s.username,
-                roll_number=s.roll_number,
-                room_number=s.room_number,
-                hostel_id=s.hostel_id,
-                hostel_name=s.hostel_name,
-                outstanding=get_student_balance(db, s.id)[0],
-                overdue_amount=0,
-                awaiting_approval=get_student_balance(db, s.id)[1]
-            ) for s in paginated],
+            items=paginated,
             total=total,
             limit=limit,
             offset=offset
@@ -62,18 +67,7 @@ def list_students(
     total = query.count()
     students = query.offset(offset).limit(limit).all()
     return PaginatedResponse(
-        items=[StudentSummary(
-            id=s.id,
-            name=s.name,
-            username=s.username,
-            roll_number=s.roll_number,
-            room_number=s.room_number,
-            hostel_id=s.hostel_id,
-            hostel_name=s.hostel_name,
-            outstanding=get_student_balance(db, s.id)[0],
-            overdue_amount=0,
-            awaiting_approval=get_student_balance(db, s.id)[1]
-        ) for s in students],
+        items=[to_summary(s) for s in students],
         total=total,
         limit=limit,
         offset=offset

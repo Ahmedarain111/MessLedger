@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/utils/extensions.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/utils/ledger_rules.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../models/enums.dart';
 import '../../models/meal_model.dart';
 import '../../models/student_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
+import '../../providers/payment_provider.dart';
 import '../../providers/student_provider.dart';
 import '../../widgets/common/dialogs.dart';
 import '../../widgets/common/layout_widgets.dart';
@@ -30,20 +29,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final note = TextEditingController();
   DateTime paidDate = DateTime.now();
   late Future<List<Meal>> _entriesFuture;
-  late Future<List<Student>> _studentsFuture;
+  late Future<Student?> _studentFuture;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _entriesFuture = context.read<MealProvider>().getAllEntries();
-    _studentsFuture = context.read<StudentProvider>().listStudents();
+    _entriesFuture = context.read<MealProvider>().getEntriesForStudent(widget.studentId);
+    _studentFuture = context.read<StudentProvider>().getStudent(widget.studentId);
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _entriesFuture = context.read<MealProvider>().getAllEntries();
-      _studentsFuture = context.read<StudentProvider>().listStudents();
+      _entriesFuture = context.read<MealProvider>().getEntriesForStudent(widget.studentId);
+      _studentFuture = context.read<StudentProvider>().getStudent(widget.studentId);
     });
   }
 
@@ -63,20 +62,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final auth = context.read<AuthProvider>();
     final user = auth.user;
     if (user == null) return;
-    final result = allocatePayment(
-      entries: mine,
-      amount: value,
-      managerId: user.id,
-      now: DateTime.now(),
-    );
-    final mealProvider = context.read<MealProvider>();
+    
+    final paymentProvider = context.read<PaymentProvider>();
     setState(() => _saving = true);
     try {
-      for (final settlement in result.settlements) {
-        await mealProvider.markPaid(settlement.entry.id);
-      }
+      await paymentProvider.record(
+        studentId: widget.studentId,
+        amount: value,
+      );
       if (!mounted) return;
-      showSuccess(context, 'Payment recorded.');
+      showSuccess(context, 'Payment of Rs. $value recorded.');
       context.pop();
     } catch (e) {
       if (!mounted) return;
@@ -99,24 +94,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
           return Scaffold(appBar: appBar, body: ErrorState(title: 'Could not load ledger', message: entriesSnapshot.error.toString(), onRetry: _refresh));
         }
 
-        return FutureBuilder<List<Student>>(
-          future: _studentsFuture,
-          builder: (context, studentsSnapshot) {
-            if (studentsSnapshot.connectionState == ConnectionState.waiting) {
+        return FutureBuilder<Student?>(
+          future: _studentFuture,
+          builder: (context, studentSnapshot) {
+            if (studentSnapshot.connectionState == ConnectionState.waiting) {
               return Scaffold(appBar: appBar, body: const ListSkeleton(itemCount: 3, itemHeight: 110));
             }
-            if (studentsSnapshot.hasError) {
-              return Scaffold(appBar: appBar, body: ErrorState(title: 'Could not load student', message: studentsSnapshot.error.toString(), onRetry: _refresh));
+            if (studentSnapshot.hasError) {
+              return Scaffold(appBar: appBar, body: ErrorState(title: 'Could not load student', message: studentSnapshot.error.toString(), onRetry: _refresh));
             }
 
             final entries = entriesSnapshot.data ?? [];
-            final students = studentsSnapshot.data ?? [];
-            final student = students.where((s) => s.id == widget.studentId).firstOrNull;
+            final student = studentSnapshot.data;
             if (student == null) {
               return Scaffold(appBar: appBar, body: const EmptyState(title: 'Student not found', message: 'Please go back and try again.', icon: Icons.person_off_outlined));
             }
 
-            final mine = entries.where((e) => e.studentId == widget.studentId).toList();
+            final mine = entries;
             final outstanding = mine.where((e) => e.entryStatus == EntryStatus.approved).fold(0, (sum, e) => sum + e.outstanding);
             if (amount.text.isEmpty) amount.text = outstanding.toString();
             final scheme = Theme.of(context).colorScheme;

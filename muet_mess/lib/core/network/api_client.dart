@@ -45,10 +45,32 @@ class ApiClient {
       final response = await call();
       return response.data;
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response!.data['detail'] ?? e.message).toString()
-          : e.message ?? 'Network error';
+      final msg = _extractErrorMessage(e.response?.data, e.message);
       throw ApiException(msg, statusCode: e.response?.statusCode);
     }
+  }
+
+  String _extractErrorMessage(dynamic data, String? fallback) {
+    if (data is Map) {
+      final error = data['error'];
+      if (error is Map && error['message'] != null) {
+        return error['message'].toString();
+      }
+      final detail = data['detail'];
+      if (detail is Map) {
+        if (detail['error'] is Map && detail['error']['message'] != null) {
+          return detail['error']['message'].toString();
+        }
+        if (detail['message'] != null) {
+          return detail['message'].toString();
+        }
+      } else if (detail != null && detail.toString().isNotEmpty) {
+        return detail.toString();
+      }
+      if (data['message'] != null) {
+        return data['message'].toString();
+      }
+    }
+    return fallback ?? 'Network error';
   }
 }

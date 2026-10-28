@@ -8,12 +8,12 @@ import '../../core/theme/app_tokens.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../models/dashboard_model.dart';
 import '../../models/enums.dart';
 import '../../models/food_item_model.dart';
-import '../../models/meal_model.dart';
 import '../../models/user_model.dart';
+import '../../services/api_dashboard_service.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/meal_provider.dart';
 import '../../providers/menu_provider.dart';
 import '../../widgets/common/food_image.dart';
 import '../../widgets/common/layout_widgets.dart';
@@ -78,7 +78,7 @@ class _StudentHome extends StatefulWidget {
 }
 
 class _StudentHomeState extends State<_StudentHome> {
-  late Future<List<Meal>> _entriesFuture;
+  late Future<StudentDashboardSummary> _summaryFuture;
   late Future<List<FoodItem>> _menuFuture;
 
   @override
@@ -88,7 +88,7 @@ class _StudentHomeState extends State<_StudentHome> {
   }
 
   void _load() {
-    _entriesFuture = context.read<MealProvider>().getAllEntries();
+    _summaryFuture = ApiDashboardService().getMySummary();
     // The menu strip is decorative; a failure here must never break the page.
     _menuFuture = context.read<MenuProvider>().getDishes().catchError((Object _) => <FoodItem>[]);
   }
@@ -120,8 +120,8 @@ class _StudentHomeState extends State<_StudentHome> {
           actions: actions,
         );
 
-    return FutureBuilder<List<Meal>>(
-      future: _entriesFuture,
+    return FutureBuilder<StudentDashboardSummary>(
+      future: _summaryFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(appBar: appBar(), body: const DashboardSkeleton());
@@ -130,20 +130,19 @@ class _StudentHomeState extends State<_StudentHome> {
           return Scaffold(
             appBar: appBar(),
             body: ErrorState(
-              title: 'Could not load entries',
+              title: 'Could not load summary',
               message: snapshot.error.toString(),
               onRetry: _refresh,
             ),
           );
         }
-        final entries = snapshot.data ?? [];
-        final mine = entries.where((e) => e.studentId == widget.user.id).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-        final approved = mine.where((e) => e.entryStatus == EntryStatus.approved).toList();
-        final pending = mine.where((e) => e.entryStatus == EntryStatus.pending).fold(0, (s, e) => s + e.totalAmount);
+        final summary = snapshot.data!;
+        final balance = summary.outstanding;
+        final pending = summary.awaitingApproval;
+        final overdue = summary.overdueCount;
+        final mine = summary.recentEntries;
         final pendingCount = mine.where((e) => e.entryStatus == EntryStatus.pending).length;
-        final balance = approved.fold(0, (s, e) => s + e.outstanding);
-        final overdue = approved.where((e) => e.outstanding > 0 && isOverdue(e.dateTime)).length;
+        final approvedCount = mine.where((e) => e.entryStatus == EntryStatus.approved).length;
         final tokens = context.tokens;
 
         return Scaffold(
@@ -190,7 +189,7 @@ class _StudentHomeState extends State<_StudentHome> {
                   child: AdaptiveGrid(minItemWidth: 150, children: [
                     SummaryStatCard(title: 'Pending', value: '$pendingCount', icon: Icons.pending_actions, color: tokens.pending),
                     SummaryStatCard(title: 'Overdue', value: '$overdue', icon: Icons.warning_amber_rounded, color: tokens.overdue),
-                    SummaryStatCard(title: 'Approved', value: '${approved.length}', icon: Icons.verified_outlined, color: tokens.success),
+                    SummaryStatCard(title: 'Approved', value: '$approvedCount', icon: Icons.verified_outlined, color: tokens.success),
                   ]),
                 ),
                 if (overdue > 0) ...[

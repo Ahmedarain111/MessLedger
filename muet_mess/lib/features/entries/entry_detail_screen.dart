@@ -92,6 +92,61 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
     }
   }
 
+  Future<void> _resolveDispute(Meal entry) async {
+    final mealProvider = context.read<MealProvider>();
+    setState(() => _busy = true);
+    try {
+      await mealProvider.resolveDispute(entry.id);
+      if (!mounted) return;
+      showSuccess(context, 'Dispute resolved.');
+      _reload();
+    } catch (e) {
+      if (!mounted) return;
+      showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _markPaid(Meal entry) async {
+    final mealProvider = context.read<MealProvider>();
+    setState(() => _busy = true);
+    try {
+      await mealProvider.markPaid(entry.id);
+      if (!mounted) return;
+      showSuccess(context, 'Entry marked as paid.');
+      _reload();
+    } catch (e) {
+      if (!mounted) return;
+      showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _reopen(Meal entry) async {
+    final confirm = await confirmDialog(
+      context,
+      title: 'Reopen Entry',
+      message: 'This will reset the payment status to unpaid so it can be settled again.',
+      confirmLabel: 'Reopen',
+    );
+    if (confirm != true || !mounted) return;
+    final mealProvider = context.read<MealProvider>();
+    setState(() => _busy = true);
+    try {
+      await mealProvider.reopen(entry.id);
+      if (!mounted) return;
+      showInfo(context, 'Entry reopened.');
+      _reload();
+    } catch (e) {
+      if (!mounted) return;
+      showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Meal>(
@@ -305,6 +360,39 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
                     ),
                   ),
                 ]),
+              ],
+              if (canManage && entry.isDisputed) ...[
+                const SizedBox(height: 14),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: tokens.disputed, foregroundColor: tokens.onHero),
+                  onPressed: _busy ? null : () => _resolveDispute(entry),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Resolve Dispute'),
+                ),
+              ],
+              if (canManage && approved && entry.outstanding > 0) ...[
+                const SizedBox(height: 14),
+                FilledButton.tonalIcon(
+                  onPressed: _busy ? null : () => _markPaid(entry),
+                  icon: const Icon(Icons.payments_outlined),
+                  label: const Text('Mark as Paid'),
+                ),
+              ],
+              if (canManage && entry.paymentStatus == PaymentStatus.paid) ...[
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : () => _reopen(entry),
+                  icon: const Icon(Icons.replay),
+                  label: const Text('Reopen Entry'),
+                ),
+              ],
+              if (canManage && entry.paymentStatus != PaymentStatus.paid) ...[
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/entries/${entry.id}/edit'),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Edit Entry'),
+                ),
               ],
               if (user?.role == UserRole.student &&
                   entry.studentId == user?.id &&

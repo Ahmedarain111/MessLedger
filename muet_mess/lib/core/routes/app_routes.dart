@@ -126,6 +126,10 @@ class AppRouter {
               path: '/entries/:id/dispute',
               builder: (_, state) => DisputeScreen(id: state.pathParameters['id']!),
             ),
+            GoRoute(
+              path: '/entries/:id/edit',
+              builder: (_, state) => EntryFormScreen(isManager: true, editId: state.pathParameters['id']),
+            ),
           ],
         ),
       ],

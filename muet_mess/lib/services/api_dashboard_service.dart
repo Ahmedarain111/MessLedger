@@ -54,6 +54,8 @@ class ApiDashboardService {
       studentId: json['studentId'] as String,
       studentName: json['studentName'] as String?,
       studentRollNumber: json['studentRollNumber'] as String?,
+      hostelId: json['hostelId'] as String?,
+      hostelName: json['hostelName'] as String?,
       dateTime: DateTime.parse(json['dateTime'] as String),
       shift: Shift.values.firstWhere((s) => s.name == json['shift']),
       items: items,

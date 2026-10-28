@@ -199,12 +199,18 @@ def reopen_entry(db: Session, entry_id: str, requester_id: str) -> Entry:
     if entry.amount_paid < total:
         raise ValueError("Entry is not fully paid")
     
-    for allocation in entry.allocations:
-        if not allocation.payment.is_undone:
-            allocation.payment.is_undone = True
-            allocation.payment.undone_at = datetime.now(timezone.utc)
+    for allocation in list(entry.allocations):
+        payment = allocation.payment
         entry.amount_paid -= allocation.amount
         db.delete(allocation)
+        db.flush()
+
+        remaining_allocations = db.query(PaymentAllocation).filter(PaymentAllocation.payment_id == payment.id).all()
+        if not remaining_allocations:
+            payment.is_undone = True
+            payment.undone_at = datetime.now(timezone.utc)
+        else:
+            payment.amount = sum(a.amount for a in remaining_allocations)
     
     entry.paid_at = None
     entry.marked_paid_by = None
@@ -378,20 +384,26 @@ def get_payment_preview(db: Session, student_id: str, amount: int) -> dict:
     }
 
 
-def get_dashboard_summary(db: Session) -> dict:
+def get_dashboard_summary(db: Session, hostel_id: Optional[str] = None) -> dict:
     today_start = get_karachi_now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_start_utc = today_start.astimezone(timezone.utc)
     today_end_utc = today_start_utc + timedelta(days=1)
     
-    today_entries = db.query(Entry).filter(
+    today_query = db.query(Entry).filter(
         Entry.date_time >= today_start_utc,
         Entry.date_time < today_end_utc,
         Entry.entry_status == EntryStatus.approved
-    ).all()
+    )
+    if hostel_id:
+        today_query = today_query.filter(Entry.hostel_id == hostel_id)
+    today_entries = today_query.all()
     
     today_sales = sum(calculate_entry_total(e.items) for e in today_entries)
     
-    all_approved = db.query(Entry).filter(Entry.entry_status == EntryStatus.approved).all()
+    all_approved_query = db.query(Entry).filter(Entry.entry_status == EntryStatus.approved)
+    if hostel_id:
+        all_approved_query = all_approved_query.filter(Entry.hostel_id == hostel_id)
+    all_approved = all_approved_query.all()
     total_outstanding = sum(
         max(0, calculate_entry_total(e.items) - e.amount_paid)
         for e in all_approved
@@ -402,25 +414,31 @@ def get_dashboard_summary(db: Session) -> dict:
         for e in all_approved if is_overdue(e)
     )
     
-    pending_count = db.query(Entry).filter(Entry.entry_status == EntryStatus.pending).count()
-    disputed_count = db.query(Entry).filter(Entry.is_disputed == True).count()
+    pending_query = db.query(Entry).filter(Entry.entry_status == EntryStatus.pending)
+    disputed_query = db.query(Entry).filter(Entry.is_disputed == True)
+    if hostel_id:
+        pending_query = pending_query.filter(Entry.hostel_id == hostel_id)
+        disputed_query = disputed_query.filter(Entry.hostel_id == hostel_id)
+    pending_count = pending_query.count()
+    disputed_count = disputed_query.count()
     
     today_by_shift = {}
     for shift in Shift:
         shift_entries = [e for e in today_entries if e.shift == shift]
         today_by_shift[shift.value] = sum(calculate_entry_total(e.items) for e in shift_entries)
     
-    students = db.query(User).filter(User.role == UserRole.student, User.is_active == True).all()
+    student_query = db.query(User).filter(User.role == UserRole.student, User.is_active == True)
+    if hostel_id:
+        student_query = student_query.filter(User.hostel_id == hostel_id)
+    students = student_query.all()
     top_defaulters = []
     for student in students:
-        outstanding, _ = get_student_balance(db, student.id)
+        outstanding, awaiting = get_student_balance(db, student.id)
         if outstanding > 0:
+            student_approved = [e for e in all_approved if e.student_id == student.id]
             overdue = sum(
                 max(0, calculate_entry_total(e.items) - e.amount_paid)
-                for e in db.query(Entry).filter(
-                    Entry.student_id == student.id,
-                    Entry.entry_status == EntryStatus.approved
-                ).all() if is_overdue(e)
+                for e in student_approved if is_overdue(e)
             )
             top_defaulters.append({
                 "id": student.id,
@@ -429,7 +447,7 @@ def get_dashboard_summary(db: Session) -> dict:
                 "room_number": student.room_number,
                 "outstanding": outstanding,
                 "overdue_amount": overdue,
-                "awaiting_approval": 0
+                "awaiting_approval": awaiting
             })
     
     top_defaulters.sort(key=lambda x: x["outstanding"], reverse=True)

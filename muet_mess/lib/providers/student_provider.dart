@@ -43,6 +43,15 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 
+  Future<Student?> getStudent(String id) async {
+    try {
+      return await _service.getStudent(id);
+    } catch (e) {
+      error = e.toString();
+      return null;
+    }
+  }
+
   Future<List<Student>> listStudents({String? search, String? sort, String? hostelId}) async {
     try {
       return await _service.listStudents(search: search, sort: sort, hostelId: hostelId);

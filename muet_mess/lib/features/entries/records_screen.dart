@@ -46,10 +46,20 @@ class _RecordsScreenState extends State<RecordsScreen> {
   late Future<List<Meal>> _entriesFuture;
   late Future<List<Student>> _studentsFuture;
 
+  Future<List<Meal>> _fetchEntries() {
+    final mealProvider = context.read<MealProvider>();
+    final auth = context.read<AuthProvider>();
+    final targetStudentId = widget.studentId ?? (widget.studentOnly ? auth.user?.id : null);
+    if (targetStudentId != null) {
+      return mealProvider.getEntriesForStudent(targetStudentId, limit: 200);
+    }
+    return mealProvider.getAllEntries(limit: 200);
+  }
+
   @override
   void initState() {
     super.initState();
-    _entriesFuture = context.read<MealProvider>().getAllEntries();
+    _entriesFuture = _fetchEntries();
     _studentsFuture = widget.studentOnly
         ? Future.value(<Student>[])
         : context.read<StudentProvider>().listStudents();
@@ -57,7 +67,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
   Future<void> _refresh() async {
     setState(() {
-      _entriesFuture = context.read<MealProvider>().getAllEntries();
+      _entriesFuture = _fetchEntries();
       _studentsFuture = widget.studentOnly
           ? Future.value(<Student>[])
           : context.read<StudentProvider>().listStudents();

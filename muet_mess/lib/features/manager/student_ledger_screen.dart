@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_tokens.dart';
-import '../../core/utils/extensions.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../models/enums.dart';
@@ -28,19 +27,19 @@ class StudentLedgerScreen extends StatefulWidget {
 
 class _StudentLedgerScreenState extends State<StudentLedgerScreen> {
   late Future<List<Meal>> _entriesFuture;
-  late Future<List<Student>> _studentsFuture;
+  late Future<Student?> _studentFuture;
 
   @override
   void initState() {
     super.initState();
-    _entriesFuture = context.read<MealProvider>().getAllEntries();
-    _studentsFuture = context.read<StudentProvider>().listStudents();
+    _entriesFuture = context.read<MealProvider>().getEntriesForStudent(widget.studentId);
+    _studentFuture = context.read<StudentProvider>().getStudent(widget.studentId);
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _entriesFuture = context.read<MealProvider>().getAllEntries();
-      _studentsFuture = context.read<StudentProvider>().listStudents();
+      _entriesFuture = context.read<MealProvider>().getEntriesForStudent(widget.studentId);
+      _studentFuture = context.read<StudentProvider>().getStudent(widget.studentId);
     });
   }
 
@@ -57,25 +56,24 @@ class _StudentLedgerScreenState extends State<StudentLedgerScreen> {
           return Scaffold(appBar: appBar, body: ErrorState(title: 'Could not load ledger', message: entriesSnapshot.error.toString(), onRetry: _refresh));
         }
 
-        return FutureBuilder<List<Student>>(
-          future: _studentsFuture,
-          builder: (context, studentsSnapshot) {
-            if (studentsSnapshot.connectionState == ConnectionState.waiting) {
+        return FutureBuilder<Student?>(
+          future: _studentFuture,
+          builder: (context, studentSnapshot) {
+            if (studentSnapshot.connectionState == ConnectionState.waiting) {
               return Scaffold(appBar: appBar, body: const ListSkeleton(showHero: true));
             }
-            if (studentsSnapshot.hasError) {
-              return Scaffold(appBar: appBar, body: ErrorState(title: 'Could not load student', message: studentsSnapshot.error.toString(), onRetry: _refresh));
+            if (studentSnapshot.hasError) {
+              return Scaffold(appBar: appBar, body: ErrorState(title: 'Could not load student', message: studentSnapshot.error.toString(), onRetry: _refresh));
             }
 
             final entries = entriesSnapshot.data ?? [];
-            final students = studentsSnapshot.data ?? [];
-            final student = students.where((s) => s.id == widget.studentId).firstOrNull;
+            final student = studentSnapshot.data;
 
             if (student == null) {
               return Scaffold(appBar: appBar, body: const EmptyState(title: 'Student not found', message: 'This student record could not be loaded.', icon: Icons.person_off_outlined));
             }
 
-            final mine = entries.where((e) => e.studentId == widget.studentId).toList()..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+            final mine = entries.toList()..sort((a, b) => b.dateTime.compareTo(a.dateTime));
             final approved = mine.where((e) => e.entryStatus == EntryStatus.approved).toList();
             final totalMeals = approved.length;
             final totalPaid = approved.fold(0, (sum, e) => sum + e.amountPaid);

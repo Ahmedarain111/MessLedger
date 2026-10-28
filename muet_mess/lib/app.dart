@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/constants/app_constants.dart';
 import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
@@ -13,17 +14,17 @@ import 'providers/payment_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/dashboard_provider.dart';
 
-class MessKhataApp extends StatefulWidget {
-  const MessKhataApp({super.key, required this.auth, required this.theme});
+class MessLedgerApp extends StatefulWidget {
+  const MessLedgerApp({super.key, required this.auth, required this.theme});
 
   final AuthProvider auth;
   final ThemeProvider theme;
 
   @override
-  State<MessKhataApp> createState() => _MessKhataAppState();
+  State<MessLedgerApp> createState() => _MessLedgerAppState();
 }
 
-class _MessKhataAppState extends State<MessKhataApp> {
+class _MessLedgerAppState extends State<MessLedgerApp> {
   late final _router = AppRouter.build(widget.auth);
 
   @override
@@ -42,7 +43,7 @@ class _MessKhataAppState extends State<MessKhataApp> {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, theme, _) => MaterialApp.router(
-          title: 'University Mess Khata',
+          title: AppConstants.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
@@ -60,5 +61,5 @@ Future<void> bootstrap() async {
   final theme = ThemeProvider();
   await theme.load();
   await auth.restore();
-  runApp(MessKhataApp(auth: auth, theme: theme));
+  runApp(MessLedgerApp(auth: auth, theme: theme));
 }
